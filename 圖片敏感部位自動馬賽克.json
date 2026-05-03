@@ -1,0 +1,454 @@
+{
+  "id": "comfyui-auto-censor-nudenet",
+  "revision": 0,
+  "last_node_id": 9,
+  "last_link_id": 11,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "Note",
+      "pos": [0, -380],
+      "size": [820, 340],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "title": "📋 安裝說明 & 使用指南",
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.5.2"
+        },
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": ["【必須安裝的 Custom Nodes（透過 ComfyUI Manager 安裝）】\n\n① comfyui-nudenet\n   ComfyUI Manager 搜尋：nudenet\n   模型檔案：nude_detection_dynamic-v1-0.onnx\n   → 放入 ComfyUI/models/nudenet/ 目錄\n   → 下載：https://github.com/notAI-tech/NudeNet/releases\n\n② comfyui-post-processing-nodes\n   ComfyUI Manager 搜尋：post processing nodes\n   → 提供 Pixelize（馬賽克方塊像素化）節點\n\n【偵測部位說明（NudeNetDetector filter 參數）】\n   MALE_GENITALIA_EXPOSED   = 男性陰莖（已暴露）\n   FEMALE_GENITALIA_EXPOSED = 女性陰部（已暴露）\n   可選擇額外加入：BUTTOCKS_EXPOSED、FEMALE_BREAST_EXPOSED、ANUS_EXPOSED\n\n【調整建議】\n   pixel_size（Pixelize 節點）：數值越大 → 馬賽克方塊越粗，建議 15~30\n   expand（GrowMask 節點）：遮罩外擴像素數，建議 20~50，確保完整覆蓋\n   confidence（NudeNetDetector）：偵測門檻，建議 0.3~0.5，越低越敏感\n\n【注意】不同版本的 comfyui-nudenet 節點參數可能略有差異，請依實際節點調整"],
+      "color": "#432",
+      "bgcolor": "#653"
+    },
+    {
+      "id": 2,
+      "type": "LoadImage",
+      "pos": [0, 80],
+      "size": [215, 98],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "label": "IMAGE",
+          "name": "image",
+          "type": "IMAGE",
+          "links": [1, 2, 3]
+        },
+        {
+          "label": "MASK",
+          "name": "mask",
+          "type": "MASK",
+          "links": []
+        }
+      ],
+      "title": "① 上傳待處理圖片",
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.75",
+        "Node name for S&R": "LoadImage",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.5.2"
+        },
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": ["example.png", "image"]
+    },
+    {
+      "id": 3,
+      "type": "NudeNetDetector",
+      "pos": [290, 30],
+      "size": [370, 200],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "image",
+          "name": "image",
+          "type": "IMAGE",
+          "link": 1
+        }
+      ],
+      "outputs": [
+        {
+          "label": "IMAGE",
+          "name": "image",
+          "type": "IMAGE",
+          "links": []
+        },
+        {
+          "label": "MASK",
+          "name": "mask",
+          "type": "MASK",
+          "links": [4, 8]
+        }
+      ],
+      "title": "② NudeNet 敏感部位偵測",
+      "properties": {
+        "cnr_id": "comfyui-nudenet",
+        "Node name for S&R": "NudeNetDetector",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.5.2"
+        },
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "nude_detection_dynamic-v1-0",
+        0.4,
+        ["MALE_GENITALIA_EXPOSED", "FEMALE_GENITALIA_EXPOSED"]
+      ]
+    },
+    {
+      "id": 4,
+      "type": "GrowMask",
+      "pos": [730, 70],
+      "size": [240, 82],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "mask",
+          "name": "mask",
+          "type": "MASK",
+          "link": 4
+        },
+        {
+          "label": "expand",
+          "name": "expand",
+          "type": "INT",
+          "widget": {"name": "expand"}
+        },
+        {
+          "label": "tapered_corners",
+          "name": "tapered_corners",
+          "type": "BOOLEAN",
+          "widget": {"name": "tapered_corners"}
+        }
+      ],
+      "outputs": [
+        {
+          "label": "MASK",
+          "name": "mask",
+          "type": "MASK",
+          "links": [6]
+        }
+      ],
+      "title": "③ 擴張遮罩（確保完整覆蓋偵測區域）",
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.75",
+        "Node name for S&R": "GrowMask",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.5.2"
+        },
+        "widget_ue_connectable": {
+          "expand": true,
+          "tapered_corners": true
+        }
+      },
+      "widgets_values": [30, true]
+    },
+    {
+      "id": 5,
+      "type": "Pixelize",
+      "pos": [290, 260],
+      "size": [240, 82],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "image",
+          "name": "image",
+          "type": "IMAGE",
+          "link": 2
+        },
+        {
+          "label": "pixel_size",
+          "name": "pixel_size",
+          "type": "INT",
+          "widget": {"name": "pixel_size"}
+        }
+      ],
+      "outputs": [
+        {
+          "label": "IMAGE",
+          "name": "image",
+          "type": "IMAGE",
+          "links": [5]
+        }
+      ],
+      "title": "④ 馬賽克效果（調 pixel_size 控制粗細）",
+      "properties": {
+        "cnr_id": "comfyui-post-processing-nodes",
+        "Node name for S&R": "Pixelize",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.5.2"
+        },
+        "widget_ue_connectable": {
+          "pixel_size": true
+        }
+      },
+      "widgets_values": [20]
+    },
+    {
+      "id": 6,
+      "type": "ImageCompositeMasked",
+      "pos": [1040, 120],
+      "size": [270, 170],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "destination",
+          "name": "destination",
+          "type": "IMAGE",
+          "link": 3
+        },
+        {
+          "label": "source",
+          "name": "source",
+          "type": "IMAGE",
+          "link": 5
+        },
+        {
+          "label": "x",
+          "name": "x",
+          "type": "INT",
+          "widget": {"name": "x"}
+        },
+        {
+          "label": "y",
+          "name": "y",
+          "type": "INT",
+          "widget": {"name": "y"}
+        },
+        {
+          "label": "resize_source",
+          "name": "resize_source",
+          "type": "BOOLEAN",
+          "widget": {"name": "resize_source"}
+        },
+        {
+          "label": "mask",
+          "name": "mask",
+          "type": "MASK",
+          "link": 6
+        }
+      ],
+      "outputs": [
+        {
+          "label": "IMAGE",
+          "name": "image",
+          "type": "IMAGE",
+          "links": [7]
+        }
+      ],
+      "title": "⑤ 合成：僅在偵測區域疊加馬賽克",
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.75",
+        "Node name for S&R": "ImageCompositeMasked",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.5.2"
+        },
+        "widget_ue_connectable": {
+          "x": true,
+          "y": true,
+          "resize_source": true
+        }
+      },
+      "widgets_values": [0, 0, false]
+    },
+    {
+      "id": 7,
+      "type": "SaveImage",
+      "pos": [1370, 60],
+      "size": [500, 580],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "images",
+          "name": "images",
+          "type": "IMAGE",
+          "link": 7
+        },
+        {
+          "label": "filename_prefix",
+          "name": "filename_prefix",
+          "type": "STRING",
+          "widget": {"name": "filename_prefix"}
+        }
+      ],
+      "outputs": [],
+      "title": "⑥ 儲存打碼後的圖片",
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.75",
+        "Node name for S&R": "SaveImage",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.5.2"
+        },
+        "widget_ue_connectable": {
+          "filename_prefix": true
+        }
+      },
+      "widgets_values": ["censored/output"]
+    },
+    {
+      "id": 8,
+      "type": "MaskToImage",
+      "pos": [730, 250],
+      "size": [200, 46],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "mask",
+          "name": "mask",
+          "type": "MASK",
+          "link": 8
+        }
+      ],
+      "outputs": [
+        {
+          "label": "IMAGE",
+          "name": "image",
+          "type": "IMAGE",
+          "links": [9]
+        }
+      ],
+      "title": "偵測遮罩轉圖（Debug 用）",
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.75",
+        "Node name for S&R": "MaskToImage",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.5.2"
+        },
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 9,
+      "type": "PreviewImage",
+      "pos": [1000, 330],
+      "size": [340, 420],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "label": "images",
+          "name": "images",
+          "type": "IMAGE",
+          "link": 9
+        }
+      ],
+      "outputs": [],
+      "title": "偵測區域預覽（白色 = 偵測到的敏感部位）",
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.75",
+        "Node name for S&R": "PreviewImage",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.5.2"
+        },
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": []
+    }
+  ],
+  "links": [
+    [1, 2, 0, 3, 0, "IMAGE"],
+    [2, 2, 0, 5, 0, "IMAGE"],
+    [3, 2, 0, 6, 0, "IMAGE"],
+    [4, 3, 1, 4, 0, "MASK"],
+    [5, 5, 0, 6, 1, "IMAGE"],
+    [6, 4, 0, 6, 5, "MASK"],
+    [7, 6, 0, 7, 0, "IMAGE"],
+    [8, 3, 1, 8, 0, "MASK"],
+    [9, 8, 0, 9, 0, "IMAGE"]
+  ],
+  "groups": [
+    {
+      "id": 1,
+      "title": "① 輸入",
+      "bounding": [-25, 55, 270, 160],
+      "color": "#3f789e",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 2,
+      "title": "② 偵測 & 遮罩",
+      "bounding": [265, 10, 730, 180],
+      "color": "#8b2020",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 3,
+      "title": "③ 馬賽克生成",
+      "bounding": [265, 235, 285, 130],
+      "color": "#7a5c00",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 4,
+      "title": "④ 合成輸出",
+      "bounding": [1010, 40, 900, 640],
+      "color": "#206040",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 5,
+      "title": "Debug：偵測遮罩視覺化（可選）",
+      "bounding": [710, 225, 660, 560],
+      "color": "#555",
+      "font_size": 20,
+      "flags": {}
+    }
+  ],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.65,
+      "offset": [80, 450]
+    }
+  },
+  "version": 0.4
+}
